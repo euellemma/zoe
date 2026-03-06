@@ -9,11 +9,18 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
+    "@daytonaio/sdk": "^0.149.0",
+    "@mariozechner/pi-agent-core": "^0.56.2",
+    "@mariozechner/pi-ai": "^0.56.2",
+    "@mariozechner/pi-coding-agent": "^0.56.2",
+    "@sinclair/typebox": "^0.34.48",
     "@types/node": "^25.3.3",
+    "convex": "^1.32.0",
     "dotenv": "^17.3.1",
     "grammy": "^1.41.1",
+    "tslib": "^2.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

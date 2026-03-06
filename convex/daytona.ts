@@ -1,6 +1,8 @@
+"use node";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { Bot, InputFile } from "grammy";
+import { Daytona } from "@daytonaio/sdk";
 
 // Environment variables
 const DAYTONA_API_URL =
@@ -15,6 +17,10 @@ export const processPrompt = action({
   handler: async (ctx, args) => {
     // We instantiate the Grammy Bot instance to interact with Telegram
     const bot = new Bot(TELEGRAM_BOT_TOKEN);
+    const daytona = new Daytona({
+      apiKey: DAYTONA_API_KEY,
+      serverUrl: DAYTONA_API_URL,
+    });
 
     try {
       await bot.api.sendMessage(
@@ -23,68 +29,17 @@ export const processPrompt = action({
       );
 
       // Task 2: Create Daytona Workspace
-      const createResponse = await fetch(`${DAYTONA_API_URL}/workspace`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${DAYTONA_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: `agent-workspace-${Date.now()}`,
-          target: "us",
-          maxDuration: 3600, // 1 hour in seconds
-          resources: {
-            cpu: 4,
-            memory: "4Gi",
-          },
-          project: {
-            name: "react-app",
-            source: {
-              repository:
-                "https://github.com/daytonaio/workspace-template-node",
-            },
-            image: "daytonaio/workspace-project:latest",
-          },
-        }),
+      const sandbox = await daytona.create({
+        image: "daytonaio/workspace-project:latest",
       });
-
-      if (!createResponse.ok) {
-        throw new Error(
-          `Failed to create workspace: ${await createResponse.text()}`,
-        );
-      }
-
-      const workspace = await createResponse.json();
-      const workspaceId = workspace.id;
+      const workspaceId = sandbox.id;
 
       await bot.api.sendMessage(
         args.chatId,
-        `⏳ Sandbox created (ID: ${workspaceId}). Waiting for it to reach 'running' state...`,
+        `⏳ Sandbox created (ID: ${workspaceId})...`,
       );
 
-      // Poll until workspace is running (increased timeout: 200 * 3s = 600s)
-      let isRunning = false;
-      for (let i = 0; i < 200; i++) {
-        const statusRes = await fetch(
-          `${DAYTONA_API_URL}/workspace/${workspaceId}`,
-          {
-            headers: { Authorization: `Bearer ${DAYTONA_API_KEY}` },
-          },
-        );
-        const statusData = await statusRes.json();
-        if (statusData.state === "running" || statusData.status === "running") {
-          isRunning = true;
-          break;
-        }
-        // Wait 3 seconds before polling again
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-      }
-
-      if (!isRunning) {
-        throw new Error(
-          "Daytona workspace failed to reach running state within timeout.",
-        );
-      }
+      await sandbox.waitUntilStarted(600);
 
       await bot.api.sendMessage(
         args.chatId,
@@ -93,24 +48,20 @@ export const processPrompt = action({
 
       // Helper function to execute a command in the Daytona workspace
       const execCommand = async (command: string) => {
-        const res = await fetch(
-          `${DAYTONA_API_URL.replace("/api", "")}/toolbox/${workspaceId}/process/execute`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${DAYTONA_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ command }),
-          },
-        );
-        if (!res.ok) {
-          throw new Error(`Execution failed: ${await res.text()}`);
+        const result = await sandbox.process.executeCommand(command);
+        if (result.exitCode !== 0) {
+          console.error(`Command failed: ${command}`);
+          console.error(`Exit code: ${result.exitCode}`);
+          console.error(`Output: ${result.result}`);
         }
-        // Assume API returns { output: "..." }
-        const data = await res.json();
-        return data.output || "";
+        return result.result || "";
       };
+
+      await bot.api.sendMessage(args.chatId, "📥 Cloning workspace template...");
+      await execCommand("git clone https://github.com/daytonaio/workspace-template-node . || true");
+
+      await bot.api.sendMessage(args.chatId, "⚙️ Installing pi-coding-agent...");
+      await execCommand("npm install @mariozechner/pi-coding-agent");
 
       // Task 3: File Injection & Agent Execution
       const envContent = `NETLIFY_AUTH_TOKEN=${NETLIFY_AUTH_TOKEN}\nNETLIFY_SITE_ID=${NETLIFY_SITE_ID}\n`;
@@ -157,7 +108,7 @@ You must use the provided deploy.js script to deploy the application to Netlify.
       // Execute Pi-Mono agent passing the user's original Telegram message (prompt) as the goal
       // Simulating the agent execution which should eventually print "Live URL: <url>"
       const promptEscaped = Buffer.from(args.prompt).toString("base64");
-      const agentStartCommand = `echo "${promptEscaped}" | base64 -d > prompt.txt && npx pi-mono start --goal="$(cat prompt.txt)"`;
+      const agentStartCommand = `echo "${promptEscaped}" | base64 -d > prompt.txt && npx -y pi start --goal="$(cat prompt.txt)"`;
 
       const executionOutput = await execCommand(agentStartCommand);
 
@@ -186,7 +137,7 @@ You must use the provided deploy.js script to deploy the application to Netlify.
       if (liveUrl) {
         await bot.api.sendMessage(
           args.chatId,
-          `🎉 Success! Your React app has been built and deployed.\\n\\nLive URL: ${liveUrl}`,
+          `🎉 Success! Your React app has been built and deployed.\n\nLive URL: ${liveUrl}`,
         );
       } else {
         await bot.api.sendMessage(
@@ -198,7 +149,7 @@ You must use the provided deploy.js script to deploy the application to Netlify.
       console.error(error);
       await bot.api.sendMessage(
         args.chatId,
-        `❌ An error occurred during orchestration:\\n${error.message}`,
+        `❌ An error occurred during orchestration:\n${error.message}`,
       );
     }
   },

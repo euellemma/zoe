@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@daytonaio/sdk": "^0.149.0",
     "convex": "^1.32.0",
     "grammy": "^1.41.1"
   }
