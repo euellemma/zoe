@@ -21,5 +21,5 @@ The project consists of two environments:
 For future agents working on this repository, the local `pi-mono` directory contains the source code for the Pi agent. It should be used exclusively for research and documentation lookups. 
 
 Particularly valuable resources:
-- **SDK Documentation:** `/home/euel/Desktop/zoe/pi-mono/packages/coding-agent/docs/sdk.md`
-- **SDK Examples:** `/home/euel/Desktop/zoe/pi-mono/packages/coding-agent/examples/sdk`
+- **SDK Documentation:** `zoe/pi-mono/packages/coding-agent/docs/sdk.md`
+- **SDK Examples:** `zoe/pi-mono/packages/coding-agent/examples/sdk`
