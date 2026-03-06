@@ -1,6 +1,6 @@
 # Next Steps: Daytona Migration
 
-This document outlines the step-by-step migration plan to transition the local programmatic SDK execution into the Convex/Daytona serverless environment.
+This document outlines the step-by-step migration plan to transition the local programmatic SDK execution into the Convex/Daytona serverless environment. Please before starting the implementation of the plans, study the codebase and tell me user what your detailed plan is going to be and after reviewing it should you start implementation
 
 ## Goal
 The `convex/daytona.ts` script needs to be refactored so that instead of running `npx pi start` in the sandbox, it injects a custom Node.js runner script that programmatically initializes the Pi SDK, hooks into the event stream for live Telegram updates, and manages the execution (exactly like `local-test/index.ts` currently does).
