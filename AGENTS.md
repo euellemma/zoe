@@ -7,7 +7,7 @@ The project consists of two environments:
 1. **Local Prototype (`local-test/`)**: A testing playground where the Pi SDK is instantiated directly. It features live tool-call streaming to Telegram, token/cost tracking, and a simulated workspace (`agent-workspace/`).
 2. **Production (`convex/`)**: A serverless environment that provisions ephemeral Daytona sandboxes to run the agent in the cloud.
 
-**Primary Goal:** The next major architectural step is migrating the programmatic SDK logic (currently in `local-test`) directly into the Daytona sandboxes managed by Convex.
+**Primary Goal:** The next major architectural step is improving the coding harness and details and then migrating the programmatic SDK logic (currently in `local-test`) directly into the Daytona sandboxes managed by Convex. But migration will happen after making sure the local-test is robust.
 
 ## Architecture & Constraints
 
@@ -23,3 +23,5 @@ For future agents working on this repository, the local `pi-mono` directory cont
 Particularly valuable resources:
 - **SDK Documentation:** `zoe/pi-mono/packages/coding-agent/docs/sdk.md`
 - **SDK Examples:** `zoe/pi-mono/packages/coding-agent/examples/sdk`
+
+For Daytona docs: docs/daytona.txt
